@@ -16,7 +16,7 @@ class XMCDiscoveryViewController: UITableViewController, HMAccessoryBrowserDeleg
     
     var accessories = [HMAccessory]()
     
-    required init(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         title = "Searching"
         
@@ -43,23 +43,25 @@ class XMCDiscoveryViewController: UITableViewController, HMAccessoryBrowserDeleg
     }
     
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("accessoryId") as UITableViewCell
-        let accessory = accessories[indexPath.row] as HMAccessory
-        cell.textLabel?.text = accessory.name
-        return cell
+        if let cell = tableView.dequeueReusableCellWithIdentifier("accessoryId") {
+            let accessory = accessories[indexPath.row] as HMAccessory
+            cell.textLabel?.text = accessory.name
+            return cell
+        }
+        return UITableViewCell()
     }
     
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         let accessory = accessories[indexPath.row] as HMAccessory
-       
-        if let room: HMRoom = homeManager.primaryHome.rooms.first as? HMRoom {
-            homeManager.primaryHome.addAccessory(accessory, completionHandler: { (error) -> Void in
+
+        if let room = homeManager.primaryHome?.rooms.first as HMRoom? {
+            homeManager.primaryHome?.addAccessory(accessory, completionHandler: { (error) -> Void in
                 if error != nil {
-                    println("Something went wrong when attempting to add an accessory to our home. \(error.localizedDescription)")
+                    print("Something went wrong when attempting to add an accessory to our home. \(error?.localizedDescription)")
                 } else {
-                    self.homeManager.primaryHome.assignAccessory(accessory, toRoom: room, completionHandler: { (error) -> Void in
+                    self.homeManager.primaryHome?.assignAccessory(accessory, toRoom: room, completionHandler: { (error) -> Void in
                         if error != nil {
-                            println("Something went wrong when attempting to add an accessory to our home. \(error.localizedDescription)")
+                            print("Something went wrong when attempting to add an accessory to our home. \(error?.localizedDescription)")
                         } else {
                             self.navigationController?.popViewControllerAnimated(true)
                         }
@@ -73,14 +75,14 @@ class XMCDiscoveryViewController: UITableViewController, HMAccessoryBrowserDeleg
     // MARK: - Accessory Delegate
     
     // Informs us when we've located a new accessory in the home
-    func accessoryBrowser(browser: HMAccessoryBrowser!, didFindNewAccessory accessory: HMAccessory!) {
+    func accessoryBrowser(browser: HMAccessoryBrowser, didFindNewAccessory accessory: HMAccessory) {
         accessories.append(accessory)
         tableView.reloadData()
     }
     
     // Inform us when a device has been removed... so something that was previously 
     // reachable, but is no longer.
-    func accessoryBrowser(browser: HMAccessoryBrowser!, didRemoveNewAccessory accessory: HMAccessory!) {
+    func accessoryBrowser(browser: HMAccessoryBrowser, didRemoveNewAccessory accessory: HMAccessory) {
         var index = 0
         for item in accessories {
             if item.name == accessory.name {

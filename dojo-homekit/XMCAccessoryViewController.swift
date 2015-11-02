@@ -35,53 +35,54 @@ class XMCAccessoryViewController: UITableViewController, HMAccessoryDelegate {
     // MARK: - Table Delegate
     
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let loaded = accessory {
+        if let _ = accessory {
             return data.count
         }
         return 0
     }
     
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("serviceId") as UITableViewCell
+        let cell = tableView.dequeueReusableCellWithIdentifier("serviceId") as UITableViewCell?
         let service = data[indexPath.row] as HMService
         
         for item in service.characteristics {
             let characteristic = item as HMCharacteristic
-            println("value \(characteristic.value) : \(characteristic.metadata)")
+            print("value \(characteristic.value) : \(characteristic.metadata)")
             
-            let metadata = characteristic.metadata as HMCharacteristicMetadata
-            if metadata.format == HMCharacteristicMetadataFormatBool {
-                if characteristic.value as Bool == true {
-                    cell.detailTextLabel?.text = "ON"
-                } else {
-                    cell.detailTextLabel?.text = "OFF"
-                }
-                
-                characteristic.enableNotification(true, completionHandler: { (error) -> Void in
-                    if error != nil {
-                        println("Something went wrong when enabling notification for a chracteristic. \(error.localizedDescription)")
+            if let metadata = characteristic.metadata as HMCharacteristicMetadata? {
+                if metadata.format == HMCharacteristicMetadataFormatBool {
+                    if characteristic.value as! Bool == true {
+                        cell?.detailTextLabel?.text = "ON"
+                    } else {
+                        cell?.detailTextLabel?.text = "OFF"
                     }
-                })
-                
-            }
-            else if metadata.format == HMCharacteristicMetadataFormatString {
-                cell.textLabel?.text = characteristic.value as? String
+                    
+                    characteristic.enableNotification(true, completionHandler: { (error) -> Void in
+                        if error != nil {
+                            print("Something went wrong when enabling notification for a chracteristic. \(error?.localizedDescription)")
+                        }
+                    })
+                    
+                }
+                else if metadata.format == HMCharacteristicMetadataFormatString {
+                    cell?.textLabel?.text = characteristic.value as? String
+                }
             }
             
         }
-        
-        return cell
+        return (cell != nil) ? cell! : UITableViewCell()
     }
     
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         tableView.deselectRowAtIndexPath(indexPath, animated: true)
         
         let service = data[indexPath.row] as HMService
-        let characteristic = service.characteristics[0] as HMCharacteristic
-        let toggleState = (characteristic.value as Bool) ? false : true
+        
+        let characteristic = service.characteristics[1] as HMCharacteristic
+        let toggleState = (characteristic.value as! Bool) ? false : true
         characteristic.writeValue(NSNumber(bool: toggleState), completionHandler: { (error) -> Void in
             if error != nil {
-                println("Something went wrong when attempting to update the service. \(error.localizedDescription)")
+                print("Something went wrong when attempting to update the service. \(error?.localizedDescription)")
             }
             self.tableView.reloadData()
         })
@@ -89,8 +90,8 @@ class XMCAccessoryViewController: UITableViewController, HMAccessoryDelegate {
     
     // MARK: - Accessory Delegate
     
-    func accessory(accessory: HMAccessory!, service: HMService!, didUpdateValueForCharacteristic characteristic: HMCharacteristic!) {
-        println("Accessory characteristic has changed! \(characteristic.value)")
+    func accessory(accessory: HMAccessory, service: HMService, didUpdateValueForCharacteristic characteristic: HMCharacteristic) {
+        print("Accessory characteristic has changed! \(characteristic.value)")
         tableView.reloadData()
     }
 }
